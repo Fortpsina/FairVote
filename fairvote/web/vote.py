@@ -19,6 +19,7 @@ from ..ballots import queue as ballot_queue
 from ..ballots import service as ballot_service
 from ..polls import service as polls_service
 from ..security import crypto
+from ..timeutil import from_iso, utc_now
 from .auth import current_user
 
 def _stores():
@@ -41,7 +42,9 @@ def _require_participant(poll: polls_service.Poll):
         abort(403)
     if user.status != "verified":
         abort(403)
-    if poll.status != "open":
+    if not user.verify_decided_at or from_iso(user.verify_decided_at) > from_iso(poll.starts_at):
+        abort(403)
+    if poll.status != "open" or not (from_iso(poll.starts_at) <= utc_now() < from_iso(poll.ends_at)):
         abort(503)
     return user
 
@@ -72,6 +75,7 @@ def poll_config(poll: polls_service.Poll, *, district: str | None = None) -> dic
                 ],
             }
             for contest in contests
+            if contest["scope"] == "nationwide" or contest["district_code"] == district
         ],
     }
 

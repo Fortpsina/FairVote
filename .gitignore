@@ -5,6 +5,12 @@ secrets.env
 instance/
 var/
 .smoke-instance/
+.smoke-final/
+.vendor-sumo/
+.check_pwhash.js
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 
 # Local tooling
 .venv/

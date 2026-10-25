@@ -88,6 +88,7 @@ def seed(
                 doc_number="000001",
             ),
             verify_method="demo",
+            now=moment - timedelta(hours=2),
             role="admin",
         )
 
@@ -114,6 +115,7 @@ def seed(
                     doc_number=f"9{district[-3:]}{index:03d}",
                 ),
                 verify_method="demo",
+                now=moment - timedelta(hours=2),
             )
             voters[district].append(user_id)
 

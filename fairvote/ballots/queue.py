@@ -7,8 +7,10 @@ its ciphertexts, so a batch cannot be silently altered after publication
 
 Everything happens inside one ``BEGIN IMMEDIATE`` on the ballot box, including the
 audit append. The audit store is a different file, so the write is not atomic across
-stores — but the lock order is always box → audit, which cannot deadlock, and a
-crash before the commit leaves neither ballots nor an audit entry.
+stores. The audit append commits before the box transaction: a crash or rollback
+in between can leave an audit entry with no matching published batch. This requires
+operator investigation; the lock order box → audit does not make the two commits
+atomic. See docs/security-review-2026-10-26.md.
 
 There is no background worker on the target host: batches are flushed lazily from a
 request (with a small probability) and by the daily task.

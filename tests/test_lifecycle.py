@@ -13,6 +13,8 @@ import pytest
 from fairvote.audit import chain
 from fairvote.ballots import queue as ballot_queue
 from fairvote.ballots import service as ballot_service
+from fairvote.ballots.models import ballot_queue_table
+from fairvote.db import write_tx
 from fairvote.polls import lifecycle, service as polls_service
 from fairvote.security import crypto
 from fairvote.timeutil import to_iso, utc_now
@@ -97,6 +99,33 @@ def test_close_records_the_box(env) -> None:
     entry = [item for item in chain.iter_entries(env["audit"]) if item.kind == "poll.close"][-1]
     assert entry.payload["box_count"] == 2
     assert entry.payload["counts_by_district"] == {"RU-MOW-77-012": 2}
+
+
+def test_close_flushes_more_than_one_batch_and_records_all_votes(env):
+    count = ballot_queue.MAX_BATCH_ROWS + 3
+    with write_tx(env["box"]) as connection:
+        connection.execute(ballot_queue_table.insert(), [
+            dict(poll_id=env["poll"].id, ballot_id=f"{i:064x}",
+                 district_code="RU-MOW-77-012", client_nonce=i.to_bytes(16, "big"),
+                 ciphertext=crypto.random_bytes(1072), confirmed=1,
+                 received_slot="2026-10-01T00:00Z", created_at="2026-10-01T00:00:00Z")
+            for i in range(count)
+        ])
+    _close(env)
+    assert len(list(ballot_queue.iter_ballots(env["box"], env["poll"].id))) == count
+    entries = [item for item in chain.iter_entries(env["audit"]) if item.kind == "poll.close"]
+    assert entries[0].payload["box_count"] == count
+
+
+def test_close_refuses_unresolved_staging(env):
+    user_id = add_user(env["registry"], "interrupted")
+    _accept(env, make_ballot(env, user_id=user_id))
+    with write_tx(env["box"]) as connection:
+        connection.execute(ballot_queue_table.update().values(confirmed=0))
+    with pytest.raises(lifecycle.PollStateError, match="неподтверждённые"):
+        _close(env)
+    assert polls_service.get_poll(env["polls"], env["poll"].id).status == "open"
+    assert not any(item.kind == "poll.close" for item in chain.iter_entries(env["audit"]))
 
 
 def test_close_is_idempotent(env) -> None:
@@ -281,6 +310,44 @@ def test_verify_py_recounts_the_poll(client, env, tmp_path: Path) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     assert "RESULT: OK" in result.stdout
     assert "valid=3" in result.stdout
+
+
+@pytest.mark.parametrize("mutation,expected", [
+    ("extra_ballot", "AUDIT_BATCH_MISMATCH"),
+    ("missing_box", "AUDIT_BATCH_MISSING"),
+    ("poll_settings", "AUDIT_POLL_MISMATCH"),
+])
+def test_verify_py_binds_box_and_config_to_audit(client, env, tmp_path, mutation, expected):
+    import base64
+    from test_verify_script import _load_module
+
+    _vote(env, 1)
+    _close(env)
+    _publish(env)
+    files = _artifacts(client, env, tmp_path)
+    verifier = _load_module()
+    rows = [json.loads(line) for line in files["ballots"].read_text().splitlines()]
+    if mutation == "extra_ballot":
+        rows.append({**rows[0], "seq": rows[0]["seq"] + 1, "ballot_id": "f" * 64})
+        root = verifier.merkle_root(
+            verifier.batch_leaf(base64.b64decode(row["ct"])) for row in rows
+        ).hex()
+        for row in rows:
+            row["batch_root"] = root
+    elif mutation == "missing_box":
+        rows = []
+    else:
+        poll = json.loads(files["poll"].read_text())
+        poll["k_threshold"] += 1
+        files["poll"].write_text(json.dumps(poll))
+    files["ballots"].write_text("".join(json.dumps(row) + "\n" for row in rows))
+    result = subprocess.run([
+        sys.executable, str(VERIFY), "--audit", str(files["audit"]),
+        "--ballots", str(files["ballots"]), "--poll", str(files["poll"]),
+        "--poll-key", str(files["key"]),
+    ], capture_output=True, text=True, timeout=30)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert expected in result.stdout
 
 
 def test_verify_py_detects_a_tampered_ballot(client, env, tmp_path: Path) -> None:

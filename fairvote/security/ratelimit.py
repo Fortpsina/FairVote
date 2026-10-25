@@ -12,6 +12,7 @@ address is never stored; rows expire with the window (≤ 24 h, docs/01 T10).
 
 from __future__ import annotations
 
+import ipaddress
 import time
 
 from flask import Flask, request
@@ -138,22 +139,43 @@ class DBStorage(Storage):
         return True
 
 
-def _ip_key(master_key: bytes):
+def client_address(*, trust_x_real_ip: bool) -> str:
+    """The client address as the application should see it.
+
+    Behind the PythonAnywhere load balancer ``remote_addr`` is the balancer's internal
+    address, identical for every visitor, so every IP-keyed limit would become one
+    global bucket. The balancer overwrites ``X-Real-IP`` with the address it received
+    the connection from. The header is honoured only when ``FV_TRUST_X_REAL_IP=1``
+    (set it on PythonAnywhere, never on a host reachable directly) and only if it
+    parses as an IP address.
+    """
+    if trust_x_real_ip:
+        candidate = (request.headers.get("X-Real-IP") or "").strip()
+        try:
+            return str(ipaddress.ip_address(candidate))
+        except ValueError:
+            pass
+    return request.remote_addr or "unknown"
+
+
+def _ip_key(master_key: bytes, *, trust_x_real_ip: bool = False):
     """Limiter key: HMAC of the client address, never the address itself."""
     hmac_key = crypto.derive_key(master_key, "fairvote/ip/v1")
 
     def key() -> str:
-        address = (request.remote_addr or "unknown").encode("utf-8")
+        address = client_address(trust_x_real_ip=trust_x_real_ip).encode("utf-8")
         return crypto.hmac_sha256(hmac_key, address).hex()
 
     return key
 
 
-def init_limiter(app: Flask, store: Store, *, master_key: bytes) -> Limiter:
+def init_limiter(
+    app: Flask, store: Store, *, master_key: bytes, trust_x_real_ip: bool = False
+) -> Limiter:
     if SCHEME not in SCHEMES:
         SCHEMES[SCHEME] = DBStorage
     limiter = Limiter(
-        key_func=_ip_key(master_key),
+        key_func=_ip_key(master_key, trust_x_real_ip=trust_x_real_ip),
         storage_uri=f"{SCHEME}://",
         storage_options={"store": store},
         default_limits=["120 per minute"],

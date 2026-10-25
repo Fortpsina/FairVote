@@ -402,6 +402,78 @@ def check_batches(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dic
     return problems, sizes
 
 
+def check_audit_links(
+    ballots: list[dict[str, Any]], audit: list[dict[str, Any]], poll: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Bind the exported box to the commitments in the supplied audit chain.
+
+    Self-consistent roots in an edited box do not prove it is the committed box.
+    The audit chain/signing key must still be independently pinned by the reader.
+    """
+    problems: list[dict[str, Any]] = []
+    poll_id = poll.get("id")
+
+    def add(code: str, detail: str) -> None:
+        problems.append({"code": code, "seq": 0, "detail": detail})
+
+    relevant = [row for row in audit if row.get("poll") == poll_id]
+    committed = {}
+    for entry in relevant:
+        if entry.get("kind") != "ballot.batch":
+            continue
+        batch = entry["payload"].get("batch_id")
+        if not isinstance(batch, int):
+            add("AUDIT_BATCH_FIELD", "invalid committed batch id")
+            continue
+        if batch in committed:
+            add("AUDIT_BATCH_DUPLICATE", f"batch {batch} committed more than once")
+        committed[batch] = entry
+
+    grouped: dict[int, list[dict[str, Any]]] = {}
+    for row in ballots:
+        if row.get("poll") != poll_id:
+            add("EXPORT_POLL_MISMATCH", "export row belongs to a different poll")
+        batch = row.get("batch")
+        if isinstance(batch, int):
+            grouped.setdefault(batch, []).append(row)
+    for batch in set(grouped) | set(committed):
+        rows = grouped.get(batch, [])
+        entry = committed.get(batch)
+        if not rows or entry is None:
+            add("AUDIT_BATCH_MISSING", f"batch {batch} is absent from the box or audit")
+            continue
+        payload = entry["payload"]
+        seqs = [row.get("seq") for row in rows]
+        if not all(isinstance(seq, int) for seq in seqs):
+            add("AUDIT_BATCH_MISMATCH", f"batch {batch} has invalid sequence numbers")
+            continue
+        if (payload.get("size") != len(rows)
+                or payload.get("first_seq") != min(seqs)
+                or payload.get("last_seq") != max(seqs)
+                or any(row.get("batch_root") != payload.get("root")
+                       or row.get("audit_seq") != entry.get("seq") for row in rows)):
+            add("AUDIT_BATCH_MISMATCH", f"batch {batch} differs from its journal commitment")
+
+    starts = [row for row in relevant if row.get("kind") == "poll.start"]
+    closes = [row for row in relevant if row.get("kind") == "poll.close"]
+    if len(starts) != 1 or len(closes) != 1:
+        add("AUDIT_POLL_LIFECYCLE", "expected one poll.start and one poll.close")
+    else:
+        start, close = starts[0], closes[0]
+        for field in ("starts_at", "ends_at", "k_threshold", "ballot_plaintext_bytes"):
+            if poll.get(field) != start["payload"].get(field):
+                add("AUDIT_POLL_MISMATCH", f"poll configuration differs for {field}")
+        if close["payload"].get("box_count") != len(ballots):
+            add("AUDIT_BOX_COUNT", "box row count differs from poll.close")
+        if any(not (start["seq"] < row["seq"] < close["seq"]) for row in committed.values()):
+            add("AUDIT_BATCH_ORDER", "batch commitment is outside the voting lifecycle")
+        keys = [row for row in relevant if row.get("kind") == "poll.key_commit"
+                and row["seq"] < start["seq"]]
+        if not keys or keys[-1]["payload"].get("fingerprint") != poll.get("key_fingerprint"):
+            add("AUDIT_KEY_MISMATCH", "key fingerprint differs from the pre-start commitment")
+    return problems
+
+
 def recount(
     rows: list[dict[str, Any]], poll: dict[str, Any], private_key: bytes
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
@@ -661,10 +733,13 @@ def main(argv: list[str] | None = None) -> int:
     problems: list[dict[str, Any]] = []
     report: dict[str, Any] = {"ok": False, "problems": problems}
 
+    audit_rows = None
     try:
         if args.audit:
             rows = load_jsonl(args.audit)
-            problems.extend(check_chain(rows))
+            chain_problems = check_chain(rows)
+            audit_rows = rows if not chain_problems else None
+            problems.extend(chain_problems)
             report["audit"] = {
                 "records": len(rows),
                 "head_hash": rows[-1].get("hash") if rows else "",
@@ -686,6 +761,9 @@ def main(argv: list[str] | None = None) -> int:
             problems.extend(key_problems)
             batch_problems, sizes = check_batches(ballots)
             problems.extend(batch_problems)
+            if audit_rows is not None:
+                problems.extend(check_audit_links(ballots, audit_rows, poll))
+                report["audit"]["box_linkage_checked"] = True
             if private_key is not None:
                 result, recount_problems = recount(ballots, poll, private_key)
                 problems.extend(recount_problems)

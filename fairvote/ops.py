@@ -94,7 +94,6 @@ def close_due(
     for poll in polls_service.list_polls(polls, statuses=("open",)):
         if from_iso(poll.ends_at) > moment:
             continue
-        ballot_queue.commit_batch(box, audit, poll.id, force=True, now=moment)
         lifecycle.close_poll(polls, audit, poll.id, box=box, now=moment)
         closed.append(poll.id)
     return closed
@@ -239,7 +238,9 @@ def housekeeping(
             )
         ).rowcount
     codes = verification.expire_requests(registry, now=moment)
-    dropped = ballot_queue.purge_unconfirmed(box, now=moment)
+    # Unconfirmed staging may be the only evidence of an interrupted acceptance
+    # after participation was committed. Keep it for operator investigation.
+    dropped = 0
     return sessions, int(counters or 0), codes, dropped
 
 
