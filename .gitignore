@@ -1,7 +1,13 @@
 # Secrets and local state — never committed (docs/02 §2.4.1, docs/04 §4.4)
 secrets.env
+.env
+.env.*
+!.env.example
+!.env.sample
 *.key
 *.pem
+*.p12
+*.pfx
 instance/
 var/
 .smoke-instance/
@@ -11,6 +17,10 @@ var/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+*.sqlite-journal
+*.sqlite3
+*.sqlite3-*
+0001-fix-client-ip-behind-pythonanywhere.patch
 
 # Local tooling
 .venv/
