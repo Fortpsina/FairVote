@@ -28,6 +28,10 @@ PythonAnywhere. UI на русском, код и комментарии на а
 
 ## Запуск
 
+Для первого размещения на хостинге используйте
+[пошаговую инструкцию тестового запуска на PythonAnywhere](docs/pythonanywhere-demo.md).
+Она хранит секреты вне репозитория и меняет пароль демо-администратора до публикации.
+
 ```bash
 python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt -r requirements-dev.txt
