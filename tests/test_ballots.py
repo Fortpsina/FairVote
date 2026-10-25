@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import select
@@ -16,6 +16,7 @@ from fairvote.polls import service as polls_service
 from fairvote.registry.models import app_user_table, participation_table
 from fairvote.security import crypto
 from fairvote.timeutil import to_iso, utc_now
+from fairvote.timeutil import from_iso
 
 PAYLOAD_SIZE = 1024
 
@@ -87,7 +88,8 @@ def test_sealed_size() -> None:
 
 def _user(registry, login: str, district_code: str = "RU-MOW-77-012") -> int:
     district_id = polls_service.registry_service.get_district(registry, district_code)["id"]
-    stamp = to_iso(utc_now())
+    # These synthetic voters were verified before the fixed 2026 poll start.
+    stamp = "2025-12-31T00:00:00Z"
     with write_tx(registry) as connection:
         result = connection.execute(
             app_user_table.insert().values(
@@ -258,3 +260,44 @@ def test_has_voted(env) -> None:
 def test_hour_slot_truncates_minutes() -> None:
     moment = datetime(2026, 3, 14, 9, 47, 12, tzinfo=timezone.utc)
     assert service.hour_slot(moment) == "2026-03-14T09:00Z"
+
+
+@pytest.mark.parametrize("offset", [timedelta(0), timedelta(seconds=1)])
+def test_deadline_enforced_without_waiting_for_daily(env, offset):
+    user_id = _user(env["registry"], "voter1")
+    with pytest.raises(service.BallotRejected):
+        _accept(env, _ballot(env, user_id=user_id), now=from_iso(env["poll"].ends_at) + offset)
+    assert not service.has_voted(env["registry"], env["poll"].id, user_id)
+    with read_tx(env["box"]) as connection:
+        assert connection.execute(ballot_queue_table.select()).first() is None
+
+
+def test_before_start_is_refused_even_if_status_is_open(env):
+    user_id = _user(env["registry"], "voter1")
+    with pytest.raises(service.BallotRejected):
+        _accept(env, _ballot(env, user_id=user_id), now=from_iso(env["poll"].starts_at) - timedelta(seconds=1))
+
+
+@pytest.mark.parametrize("changes", [
+    {"verify_decided_at": "2026-02-01T00:00:00Z"},
+    {"status": "suspended"},
+    {"voter_key": None},
+])
+def test_users_outside_start_snapshot_are_refused(env, changes):
+    user_id = _user(env["registry"], "voter1")
+    with write_tx(env["registry"]) as connection:
+        connection.execute(app_user_table.update().where(app_user_table.c.id == user_id).values(**changes))
+    with pytest.raises(service.BallotRejected):
+        _accept(env, _ballot(env, user_id=user_id))
+    assert not service.has_voted(env["registry"], env["poll"].id, user_id)
+
+
+def test_unconfirmed_staging_is_never_reported_as_accepted(env):
+    user_id = _user(env["registry"], "voter1")
+    ballot = _ballot(env, user_id=user_id)
+    _accept(env, ballot)
+    # Simulate the state after participation committed but confirmation was lost.
+    with write_tx(env["box"]) as connection:
+        connection.execute(ballot_queue_table.update().values(confirmed=0))
+    with pytest.raises(service.BallotRejected, match="не подтверждена"):
+        _accept(env, ballot)

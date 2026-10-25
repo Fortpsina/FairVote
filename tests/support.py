@@ -22,7 +22,8 @@ PAYLOAD_SIZE = 1024
 
 def add_user(registry, login: str, district_code: str = "RU-MOW-77-012") -> int:
     district = registry_service.get_district(registry, district_code)
-    stamp = to_iso(utc_now())
+    # These synthetic voters were verified before the fixed 2026 poll start.
+    stamp = "2025-12-31T00:00:00Z"
     with write_tx(registry) as connection:
         result = connection.execute(
             app_user_table.insert().values(

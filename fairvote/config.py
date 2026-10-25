@@ -83,6 +83,7 @@ class Settings:
     session_idle_minutes: int = 20
     session_absolute_hours: int = 8
     backup_key: bytes | None = None
+    trust_x_real_ip: bool = False
     operator_name: str = ""
     legal_basis: str = ""
     contact: str = ""
@@ -145,6 +146,7 @@ class Settings:
             session_idle_minutes=_env_int("FV_SESSION_IDLE_MINUTES", 20),
             session_absolute_hours=_env_int("FV_SESSION_ABSOLUTE_HOURS", 8),
             backup_key=_env_bytes("FV_BACKUP_KEY", size=32, required=False),
+            trust_x_real_ip=_env_bool("FV_TRUST_X_REAL_IP", False),
             operator_name=os.environ.get("FV_OPERATOR", "")
             or ("демонстрационный оператор" if demo else ""),
             legal_basis=os.environ.get("FV_LEGAL_BASIS", "")

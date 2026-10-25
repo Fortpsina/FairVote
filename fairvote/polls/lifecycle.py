@@ -20,7 +20,7 @@ from ..audit import chain
 from ..ballots import queue as ballot_queue
 from ..ballots import tally as tally_mod
 from ..ballots.models import published_key_table
-from ..ballots.models import ballot_table
+from ..ballots.models import ballot_queue_table, ballot_table
 from ..db import Store, read_tx, write_tx
 from ..security import crypto
 from ..security.canonical import dumps
@@ -63,6 +63,20 @@ def close_poll(
     if moment < from_iso(poll.ends_at):
         raise PollStateError("опрос ещё не закончился")
 
+    # All callers (CLI, admin and daily) must flush the entire confirmed queue,
+    # including queues larger than one batch, before committing final counts.
+    if box is not None:
+        while ballot_queue.commit_batch(box, audit, poll_id, force=True, now=moment):
+            pass
+        # An interrupted acceptance must be investigated before sealing results.
+        # It cannot safely be attributed to a user after the fact.
+        with read_tx(box) as connection:
+            unresolved = connection.execute(
+                select(ballot_queue_table.c.id)
+                .where(ballot_queue_table.c.poll_id == poll_id).limit(1)
+            ).first()
+        if unresolved is not None:
+            raise PollStateError("в очереди есть неподтверждённые бюллетени; требуется разбор сбоя")
     stats = _box_stats(box, poll_id) if box is not None else {}
     stamp = to_iso(moment)
     if not chain.has_entry(audit, kind="poll.close", poll_id=poll_id):

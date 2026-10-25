@@ -28,6 +28,17 @@ const receipt = document.getElementById("receipt");
 const submitButton = document.getElementById("submit-ballot");
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+// Retain the exact request only in memory: a network retry must not create a
+// new pseudonym, nonce or ciphertext for a vote that may already be accepted.
+let preparedBallot = null;
+
+// Previous versions persisted receipts automatically. Remove that legacy copy
+// on this page; a shared browser must not retain a durable link to a vote.
+try {
+  localStorage.removeItem("fairvote.receipts");
+} catch (error) {
+  // Storage can be disabled.
+}
 
 function showStatus(message, kind = "notice") {
   statusBox.textContent = message;
@@ -68,19 +79,32 @@ async function submitBallot(event) {
 
   try {
     const sodium = await waitForSodium();
-    const secret = await chooseSecret(sodium);
-    const payload = buildPayload({
-      pollId: config.poll_id,
-      district: document.body.dataset.district || app.dataset.district || currentDistrict(),
-      choices: collectChoices(),
-      spoil: document.getElementById("spoil").checked,
-      size: config.ballot_plaintext_bytes,
-    });
-    const publicKey = sodium.from_hex(config.public_key_hex);
-    const sealed = sodium.crypto_box_seal(payload, publicKey);
-    const ballotId = await deriveBallotId(secret, config.poll_id);
-    const nonce = new Uint8Array(16);
-    crypto.getRandomValues(nonce);
+    if (!preparedBallot) {
+      const secret = await chooseSecret(sodium);
+      const payload = buildPayload({
+        pollId: config.poll_id,
+        district: config.district,
+        choices: collectChoices(),
+        spoil: document.getElementById("spoil").checked,
+        size: config.ballot_plaintext_bytes,
+      });
+      const publicKey = sodium.from_hex(config.public_key_hex);
+      const sealed = sodium.crypto_box_seal(payload, publicKey);
+      const ballotId = await deriveBallotId(secret, config.poll_id);
+      const nonce = new Uint8Array(16);
+      crypto.getRandomValues(nonce);
+
+      preparedBallot = {
+        ballot_id: ballotId,
+        nonce: toBase64(nonce),
+        ciphertext: toBase64(sealed),
+      };
+      // Show recovery information before I/O, including when the response is lost.
+      document.getElementById("receipt-secret").textContent = secretToWords(secret);
+      document.getElementById("receipt-ballot-id").textContent = ballotId;
+      receipt.hidden = false;
+      for (const input of form.querySelectorAll("input")) input.disabled = true;
+    }
 
     const response = await fetch(`/vote/${config.poll_id}`, {
       method: "POST",
@@ -88,18 +112,14 @@ async function submitBallot(event) {
         "content-type": "application/json",
         "X-CSRFToken": csrfToken,
       },
-      body: JSON.stringify({
-        ballot_id: ballotId,
-        nonce: toBase64(nonce),
-        ciphertext: toBase64(sealed),
-      }),
+      body: JSON.stringify(preparedBallot),
     });
 
     if (!response.ok) {
       showStatus(
         response.status === 409
           ? "Голос не принят: возможно, вы уже голосовали в этом опросе."
-          : "Голос не принят. Обновите страницу и попробуйте ещё раз.",
+          : "Приём не подтверждён. Сохраните секрет и повторите отправку с этой страницы.",
         "notice notice--danger"
       );
       submitButton.disabled = false;
@@ -107,31 +127,19 @@ async function submitBallot(event) {
     }
 
     const result = await response.json();
-    const passphraseMode = document.getElementById("use-passphrase")?.checked;
-    document.getElementById("receipt-secret").textContent = passphraseMode
-      ? "секрет выводится из вашего кодового слова — запомните его"
-      : secretToWords(secret);
     document.getElementById("receipt-ballot-id").textContent = result.ballot_id;
     receipt.hidden = false;
     form.hidden = true;
     showStatus("Голос принят и будет опубликован в ящике после закрытия опроса.");
 
-    try {
-      const stored = JSON.parse(localStorage.getItem("fairvote.receipts") || "{}");
-      stored[config.poll_id] = { ballotId: result.ballot_id, secret: secretToWords(secret) };
-      localStorage.setItem("fairvote.receipts", JSON.stringify(stored));
-    } catch (error) {
-      // Storage can be disabled; the printed secret remains the source of truth.
-    }
   } catch (error) {
-    showStatus(`Не удалось отправить бюллетень: ${error.message}`, "notice notice--danger");
+    showStatus(
+      `Не удалось подтвердить приём: ${error.message}. ` +
+      "Сохраните секрет. Повторная отправка с этой страницы использует тот же бюллетень.",
+      "notice notice--danger"
+    );
     submitButton.disabled = false;
   }
-}
-
-function currentDistrict() {
-  const node = document.querySelector("[data-district]");
-  return node ? node.dataset.district : "";
 }
 
 if (form) {

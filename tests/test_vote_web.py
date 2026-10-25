@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import json
 import re
+from datetime import datetime, timezone
 
 import pytest
 
@@ -13,6 +14,8 @@ from fairvote.ballots import service as ballot_service
 from fairvote.registry import service as registry_service
 from fairvote.registry.identity import Identity
 from fairvote.security import crypto
+from fairvote.db import write_tx
+from fairvote.registry.models import app_user_table
 from support import open_poll
 
 PASSWORD = "korrektnyj-parol-2026"
@@ -35,6 +38,7 @@ def _make_user(registry, login: str, district: str) -> int:
             doc_number=f"9{abs(hash(login)) % 100000:05d}",
         ),
         verify_method="demo",
+        now=datetime(2025, 12, 31, tzinfo=timezone.utc),
     )
 
 
@@ -109,6 +113,33 @@ def test_vote_page_shows_config(client, env, voter) -> None:
     assert config["district"] == "RU-MOW-77-012"
     assert "libsodium.js" in page
     assert "js/vote.js" in page
+
+
+def test_verified_after_start_cannot_vote(client, env, voter):
+    with write_tx(env["registry"]) as connection:
+        connection.execute(app_user_table.update().where(app_user_table.c.id == voter)
+                           .values(verify_decided_at="2026-02-01T00:00:00Z"))
+    _login(client, "voter")
+    assert client.get(f"/vote/{env['poll'].id}").status_code == 403
+
+
+def test_config_omits_contests_for_other_districts(app, env):
+    from fairvote.web.vote import poll_config
+    from fairvote.polls.service import add_contest
+
+    # Create a poll with scoped contests before committing its start.
+    holder = {}
+    def setup(store, poll_id):
+        holder["national"] = add_contest(
+            store, poll_id, title="Общий", kind="party_list")
+        holder["local"] = add_contest(store, poll_id, title="Москва", kind="candidate",
+                                      scope="district", district_code="RU-MOW-77-012")
+        holder["other"] = add_contest(store, poll_id, title="Петербург", kind="candidate",
+                                      scope="district", district_code="RU-SPE-78-045")
+    scoped = open_poll(app.extensions["fairvote.stores"], before_start=setup)
+    with app.app_context():
+        config = poll_config(scoped["poll"], district="RU-MOW-77-012")
+    assert {contest["id"] for contest in config["contests"]} == {holder["national"], holder["local"]}
 
 
 def test_outsider_cannot_open_the_ballot(client, env, other_voter) -> None:

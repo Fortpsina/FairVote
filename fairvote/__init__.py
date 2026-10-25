@@ -59,7 +59,12 @@ def create_app(settings: Settings | None = None) -> Flask:
         idle_minutes=resolved.session_idle_minutes,
         absolute_hours=resolved.session_absolute_hours,
     )
-    limiter = init_limiter(app, stores["registry"], master_key=resolved.master_key)
+    limiter = init_limiter(
+        app,
+        stores["registry"],
+        master_key=resolved.master_key,
+        trust_x_real_ip=resolved.trust_x_real_ip,
+    )
     app.extensions["fairvote.limiter"] = limiter
     init_csrf(app)
     init_headers(app)
