@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Сессии — FairVote{% endblock %}
+{% block content %}
+  <h1>Активные сессии</h1>
+  <p class="muted">
+    Платформа хранит только идентификатор сессии и время активности. IP-адреса и
+    user-agent не сохраняются, поэтому различить устройства можно только по времени.
+  </p>
+
+  {% if sessions %}
+    <table>
+      <thead><tr><th>Сессия</th><th>Создана</th><th>Последняя активность</th><th>Истекает</th></tr></thead>
+      <tbody>
+        {% for item in sessions %}
+          <tr>
+            <td><code>{{ item.fingerprint }}…</code></td>
+            <td>{{ item.created_at }}</td>
+            <td>{{ item.last_seen_at }}</td>
+            <td>{{ item.expires_at }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <form method="post" action="{{ url_for('account.revoke_sessions') }}" class="form">
+      {{ form.hidden_tag() }}
+      <button class="button button--danger" type="submit">Завершить все сессии</button>
+    </form>
+  {% else %}
+    <p class="muted">Активных сессий нет.</p>
+  {% endif %}
+
+  <p><a href="{{ url_for('account.index') }}">Назад в аккаунт</a></p>
+{% endblock %}

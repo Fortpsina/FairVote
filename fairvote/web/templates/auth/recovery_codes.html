@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Коды восстановления — FairVote{% endblock %}
+{% block content %}
+  <h1>Коды восстановления</h1>
+  <div class="notice notice--confirm">
+    <p>
+      Это единственная возможность увидеть коды: на сервере хранятся только их хэши.
+      Сохраните их в надёжном месте — например, распечатайте или положите в менеджер
+      паролей. Каждый код одноразовый.
+    </p>
+  </div>
+  <ul class="codes">
+    {% for code in codes %}
+      <li><code>{{ code }}</code></li>
+    {% endfor %}
+  </ul>
+  <p class="muted">
+    Администратор платформы не имеет доступа к реестру и не может восстановить доступ
+    без кода. Потеря и кодов, и телефона означает потерю аккаунта.
+  </p>
+  <p><a class="button button--secondary" href="{{ url_for('public.index') }}">Готово</a></p>
+{% endblock %}

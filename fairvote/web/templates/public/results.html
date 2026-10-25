@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Итоги — {{ poll.title }}{% endblock %}
+{% block content %}
+  <h1>{{ poll.title }}</h1>
+
+  <div class="notice">
+    <p class="muted">
+      Всего бюллетеней: <strong>{{ tally.total_ballots }}</strong> ·
+      действительных: <strong>{{ tally.valid }}</strong> ·
+      испорченных: <strong>{{ tally.spoiled }}</strong> ·
+      недействительных: <strong>{{ tally.invalid }}</strong>
+    </p>
+    <p class="muted">
+      Порог анонимности: {{ poll.k_threshold }}. Разбивка по округам скрыта, если
+      проголосовало меньше {{ poll.k_threshold }} человек.
+      {% if tally.suppressed_districts %}
+        Скрыто округов: {{ tally.suppressed_districts | length }}.
+      {% endif %}
+    </p>
+  </div>
+
+  {% for contest in contests %}
+    <h2>{{ contest.title }}</h2>
+    <table>
+      <thead><tr><th>Вариант</th><th>Голосов</th></tr></thead>
+      <tbody>
+        {% for option in contest.options %}
+          <tr>
+            <td>{{ option.name }}</td>
+            <td>{{ tally.national[contest.id][option.id] }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
+
+  <h2>По округам</h2>
+  <table>
+    <thead><tr><th>Округ</th><th>Бюллетеней</th><th>Действительных</th></tr></thead>
+    <tbody>
+      {% for code, bucket in tally.by_district.items() %}
+        <tr>
+          <td>{{ code }}</td>
+          {% if bucket.suppressed %}
+            <td colspan="2"><em>меньше порога {{ poll.k_threshold }}</em></td>
+          {% else %}
+            <td>{{ bucket.total }}</td>
+            <td>{{ bucket.valid }}</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if tally.anomalies %}
+    <h2>Аномалии</h2>
+    <p class="muted">
+      Эти бюллетени не учтены. Каждая аномалия видна любому проверяющему.
+    </p>
+    <ul>
+      {% for anomaly in tally.anomalies %}
+        <li>бюллетень #{{ anomaly.seq }}: {{ anomaly.code }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <h2>Проверить самостоятельно</h2>
+  <pre class="code-block">python scripts/verify.py \
+  --audit audit.jsonl --ballots ballots.jsonl \
+  --poll poll.json --poll-key key.json</pre>
+  <p class="muted">
+    Артефакты: <a href="{{ url_for('transparency.export_poll', poll_id=poll.id) }}">конфиг</a>,
+    <a href="{{ url_for('transparency.export_ballots', poll_id=poll.id) }}">бюллетени</a>,
+    <a href="{{ url_for('transparency.published_key', poll_id=poll.id) }}">ключ</a>.
+  </p>
+{% endblock %}

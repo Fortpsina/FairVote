@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}FairVote{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  </head>
+  <body>
+    {% if demo_mode %}
+      <div class="demo-banner" role="status">{{ t("demo.banner") }}</div>
+    {% endif %}
+    <header class="site-header">
+      <a class="brand" href="{{ url_for('public.index') }}">{{ t("site.name") }}</a>
+      <span class="tagline">{{ t("site.tagline") }}</span>
+      <nav class="site-nav">
+        <a href="{{ url_for('public.polls') }}">{{ t("nav.polls") }}</a>
+        <a href="{{ url_for('transparency.index') }}">{{ t("nav.transparency") }}</a>
+        <a href="{{ url_for('pages.how_it_works') }}">{{ t("nav.how") }}</a>
+        {% if current_user %}
+          <a href="{{ url_for('account.index') }}">{{ t("nav.account") }}</a>
+          {% if current_user.role == "admin" %}
+            <a href="{{ url_for('admin.index') }}">{{ t("nav.admin") }}</a>
+          {% endif %}
+          <form method="post" action="{{ url_for('auth.logout') }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="button button--secondary" type="submit">{{ t("nav.logout") }}</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('auth.login_form') }}">{{ t("nav.login") }}</a>
+          <a href="{{ url_for('auth.register_form') }}">{{ t("nav.register") }}</a>
+        {% endif %}
+      </nav>
+    </header>
+    <main class="site-main">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="notice {{ 'notice--danger' if category == 'error' else '' }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="site-footer">
+      <p>{{ t("site.footer.legal") }}</p>
+      <p class="muted">
+        <a href="{{ url_for('pages.how_it_works') }}">{{ t("nav.how") }}</a> ·
+        <a href="{{ url_for('pages.privacy') }}">{{ t("nav.privacy") }}</a> ·
+        <a href="{{ url_for('pages.terms') }}">{{ t("nav.terms") }}</a> ·
+        <a href="{{ url_for('transparency.index') }}">{{ t("nav.transparency") }}</a>
+      </p>
+    </footer>
+  </body>
+</html>

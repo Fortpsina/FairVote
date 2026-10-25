@@ -1,0 +1,7 @@
+{
+  "warning": "DEMO ONLY: the private key must stay offline in production",
+  "poll": "0f18e1f3a58628195ccc6a5bd390b373",
+  "public_key": "7397550ec3cc721be3aeb4c84d59c68d531337eb04d4b360876c79cf642d9b54",
+  "private_key": "69e714d2b07ecdd2d422eef4ff1c3157ef546eabbe5f4fa84614d78849fadcab",
+  "fingerprint": "ee3791213f90281a6273a6c65eeafca4ddc63b9ee88dde92879f219c1bc78aef"
+}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Запись {{ entry.seq }} — FairVote{% endblock %}
+{% block content %}
+  <h1>Запись #{{ entry.seq }}</h1>
+  <p class="muted">{{ entry.ts }} · {{ entry.kind }}{% if entry.poll_id %} · опрос {{ entry.poll_id }}{% endif %}</p>
+
+  <h2>Что записано</h2>
+  <pre class="code-block">{{ entry.payload | tojson(indent=2) }}</pre>
+
+  <h2>Цепочка</h2>
+  <table>
+    <tbody>
+      <tr><th>prev_hash</th><td><code class="break">{{ entry.prev_hash.hex() }}</code></td></tr>
+      <tr><th>hash</th><td><code class="break">{{ entry.hash.hex() }}</code></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">
+    <code>hash = SHA-256(prev_hash || canonical_json(record))</code>, где record —
+    это <code>{seq, ts, kind, poll, payload}</code>. Пересчитайте вручную или
+    запустите <code>scripts/verify.py</code>.
+  </p>
+  <p><a href="{{ url_for('transparency.index') }}">К странице прозрачности</a></p>
+{% endblock %}

@@ -1,0 +1,26 @@
+{
+  "note": "Pinned browser assets. Load libsodium.js before libsodium-wrappers.js. Regenerate with: python tools/vendor_libsodium.py --update",
+  "libsodium_version": "1.0.20",
+  "files": [
+    {
+      "path": "libsodium.js",
+      "package": "libsodium-sumo",
+      "version": "0.7.15",
+      "member": "package/dist/modules-sumo/libsodium-sumo.js",
+      "tarball": "https://registry.npmjs.org/libsodium-sumo/-/libsodium-sumo-0.7.15.tgz",
+      "tarball_sha256": "3def931c3da43cc71974cb59cabf24f7321114ba4826439899afcf9f8de90ca0",
+      "sha256": "d2f4ae352b56b8b55d38e200478bb90bdb07d4035bd5a98cdc9c8cceaf688f19",
+      "bytes": 960303
+    },
+    {
+      "path": "libsodium-wrappers.js",
+      "package": "libsodium-wrappers-sumo",
+      "version": "0.7.15",
+      "member": "package/dist/modules-sumo/libsodium-wrappers.js",
+      "tarball": "https://registry.npmjs.org/libsodium-wrappers-sumo/-/libsodium-wrappers-sumo-0.7.15.tgz",
+      "tarball_sha256": "682161b56019ad75a304a3496665798a440ee6a41b6e7d8c8eefaa8d60c35a8e",
+      "sha256": "b7105ad0513c847eb19aa3b38dde1a2034cfbe689986195d5669dcabe24c8723",
+      "bytes": 101758
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Проверка бюллетеня — FairVote{% endblock %}
+{% block content %}
+  <h1>Проверить свой бюллетень</h1>
+
+  <p class="muted">
+    Проверка выполняется только в вашем браузере: страница не отправляет секрет на
+    сервер и не спрашивает «есть ли такой бюллетень» — иначе это был бы инструмент
+    принуждения. Скачайте опубликованный ящик и найдите себя локально.
+  </p>
+
+  <h2>1. Скачайте ящик</h2>
+  <p>
+    На странице опроса откройте «Итоги» и скачайте <code>ballots.jsonl</code>. Файл
+    доступен только после закрытия опроса.
+  </p>
+
+  <h2>2. Введите секрет</h2>
+  <div class="form">
+    <div class="field">
+      <label class="label" for="secret">Секрет (Crockford base32, как вы его записали)</label>
+      <input class="input" id="secret" type="text" autocomplete="off" spellcheck="false"
+             placeholder="XXXX-XXXX-XXXX-...">
+    </div>
+    <div class="field">
+      <label class="label" for="ballots">Файл ballots.jsonl</label>
+      <input class="input" id="ballots" type="file" accept=".jsonl,application/x-ndjson">
+    </div>
+    <button class="button" id="check-ballot" type="button">Найти мой бюллетень</button>
+  </div>
+
+  <div id="verify-result" class="notice" hidden></div>
+
+  <h2>Без JavaScript</h2>
+  <p class="muted">
+    То же самое можно сделать скриптом: <code>python scripts/verify.py --ballots
+    ballots.jsonl --find &lt;ballot_id&gt;</code>. Идентификатор бюллетеня — это
+    HMAC-SHA256 от вашего секрета и идентификатора опроса; его печатает скрипт
+    <code>--derive-ballot-id</code>.
+  </p>
+
+  <script type="module" src="{{ url_for('static', filename='js/verify.js') }}"></script>
+{% endblock %}

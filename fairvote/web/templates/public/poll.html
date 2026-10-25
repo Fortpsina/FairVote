@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ poll.title }} — FairVote{% endblock %}
+{% block content %}
+  <h1>{{ poll.title }}</h1>
+  <p class="muted">
+    {{ poll.starts_at }} — {{ poll.ends_at }} (UTC) ·
+    {% if poll.status == "open" %}голосование идёт
+    {% elif poll.status == "scheduled" %}ещё не началось
+    {% else %}закрыт{% endif %}
+  </p>
+
+  <div class="prose">{{ poll.description_html | safe }}</div>
+
+  <h2>Пункты бюллетеня</h2>
+  {% for contest in contests %}
+    <h3>{{ contest.title }}</h3>
+    <ul>
+      {% for option in contest.options %}
+        <li>
+          {% if option.kind == "against_all" %}<em>{{ option.name }}</em>
+          {% else %}{{ option.name }}{% endif %}
+          {% if option.link_url %}
+            — <a href="{{ option.link_url }}" rel="noopener noreferrer nofollow" target="_blank">сайт</a>
+          {% endif %}
+          {% if option.bio_html %}<div class="prose">{{ option.bio_html | safe }}</div>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+
+  <h2>Кто допущен</h2>
+  {% if commitments %}
+    <p class="muted">
+      Опубликован обязательство (корень Меркла) и число допущенных по округам.
+      Листья не публикуются: иначе по паспортным данным можно было бы проверять
+      участие конкретного человека.
+    </p>
+    <table>
+      <thead><tr><th>Округ</th><th>Допущено</th><th>Корень поддерева</th></tr></thead>
+      <tbody>
+        {% for item in commitments %}
+          <tr>
+            <td>{{ item.code }}</td>
+            <td>{{ item.count }}</td>
+            <td><code class="break">{{ item.root }}</code></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted">Агрегатный корень: <code class="break">{{ poll.eligibility_root.hex() }}</code></p>
+  {% else %}
+    <p class="muted">Обязательство появится в момент старта опроса.</p>
+  {% endif %}
+
+  <h2>Итоги</h2>
+  <p>
+    <a href="{{ url_for('public.poll_results', slug=poll.slug) }}">Результаты опроса</a>
+    — они появятся после закрытия и публикации ключа.
+  </p>
+
+  <h2>Участие</h2>
+  {% if poll.status == "open" %}
+    {% if user %}
+      <p><a class="button" href="{{ url_for('vote.ballot', poll_id=poll.id) }}">Перейти к бюллетеню</a></p>
+    {% else %}
+      <p><a class="button" href="{{ url_for('auth.login_form', next=url_for('vote.ballot', poll_id=poll.id)) }}">Войти и голосовать</a></p>
+    {% endif %}
+  {% else %}
+    <p class="muted">Голосование недоступно: опрос не открыт.</p>
+  {% endif %}
+
+  <p class="muted">
+    Итоги скрыты до закрытия опроса и публикации ключа. Переголосование в этой
+    сборке не предусмотрено.
+  </p>
+{% endblock %}

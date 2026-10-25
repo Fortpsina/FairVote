@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Прозрачность — FairVote{% endblock %}
+{% block content %}
+  <h1>Прозрачность</h1>
+
+  <h2>Голова журнала</h2>
+  <div class="notice">
+    <p class="muted">Записей в цепочке: <strong>{{ seq }}</strong></p>
+    <p class="break"><code>{{ head_hash }}</code></p>
+    <p class="muted">
+      Сверьте этот хэш с копией, опубликованной в независимом канале: если они
+      расходятся, журнал переписывали.
+    </p>
+  </div>
+
+  <h2>Выгрузки</h2>
+  <ul>
+    <li><a href="{{ url_for('transparency.export_audit') }}">audit.jsonl</a> —
+      вся цепочка, одна запись на строку;
+      <a href="{{ url_for('transparency.export_audit_signature') }}">подпись</a></li>
+  </ul>
+
+  <h2>Опросы</h2>
+  {% if polls %}
+    <table>
+      <thead><tr><th>Опрос</th><th>Статус</th><th>Артефакты</th></tr></thead>
+      <tbody>
+        {% for poll in polls %}
+          <tr>
+            <td><a href="{{ url_for('public.poll_detail', slug=poll.slug) }}">{{ poll.title }}</a></td>
+            <td>{{ poll.status }}</td>
+            <td>
+              <a href="{{ url_for('transparency.export_poll', poll_id=poll.id) }}">конфиг</a>
+              {% if poll.status in ("closed", "published") %}
+                · <a href="{{ url_for('transparency.export_ballots', poll_id=poll.id) }}">бюллетени</a>
+                · <a href="{{ url_for('transparency.export_ballots_signature', poll_id=poll.id) }}">подпись</a>
+              {% endif %}
+              {% if poll.private_key_published_at %}
+                · <a href="{{ url_for('transparency.published_key', poll_id=poll.id) }}">ключ</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">Нет опросов, по которым уже есть артефакты.</p>
+  {% endif %}
+
+  <h2>Как проверить</h2>
+  <pre class="code-block">python scripts/verify.py \
+  --audit audit.jsonl --audit-sig audit.jsonl.sig \
+  --ballots ballots.jsonl --poll poll.json --poll-key key.json</pre>
+  <p class="muted">
+    Скрипт проверяет цепочку, подписи, расшифровывает бюллетени и пересчитывает итоги.
+    Ему не нужен наш сервер — только эти файлы и ключ, опубликованный после закрытия.
+  </p>
+{% endblock %}

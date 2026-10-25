@@ -1,0 +1,13 @@
+{
+  "v": 1,
+  "files": {
+    "app.css": "8401416a1ffa6a6450c9dad55a64f43f7b596d1fecb3f84a4855513a15e5df5d",
+    "js/payload.js": "0e121cbfadaec7b449ed3c009b8dd343bf97fdf8a7f11c206a4f27c7fdb561f2",
+    "js/verify.js": "d8cdf72f880d98f8925d2f65058a71a5596d94523c126945d891bbc2dbbbf6bd",
+    "js/vote.js": "226c47cb5e3f8556ab50502c298159eb3c304378ce9b0b6377f47a77d794030f",
+    "vendor/libsodium-wrappers.js": "b7105ad0513c847eb19aa3b38dde1a2034cfbe689986195d5669dcabe24c8723",
+    "vendor/libsodium.js": "d2f4ae352b56b8b55d38e200478bb90bdb07d4035bd5a98cdc9c8cceaf688f19",
+    "vendor/vendor.lock": "a921712d56b34b470207a2bb71f4f50a681e01beb52ba92599b3c4599a98fdda"
+  },
+  "manifest_hash": "3f7d5b144e44db75dc5682821e6181ce5490eeed9a45373d38ba036dbb5fc3c8"
+}

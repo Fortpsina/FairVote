@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Бюллетень — {{ poll.title }}{% endblock %}
+{% block content %}
+  <h1>{{ poll.title }}</h1>
+  <p class="muted">
+    Округ: {{ current_user.district_name }}. Голосование до {{ poll.ends_at }} (UTC).
+    Порог анонимности: {{ poll.k_threshold }}.
+  </p>
+
+  {% if already_voted %}
+    <div class="notice">
+      Ваш голос уже принят. В этом опросе переголосование невозможно — бюллетень
+      нельзя изменить или отозвать.
+    </div>
+    <p><a class="button button--secondary" href="{{ url_for('public.index') }}">На главную</a></p>
+  {% else %}
+    <div class="notice notice--danger">
+      <strong>Голос нельзя изменить.</strong> Если на вас оказывают давление — не
+      голосуйте с этого устройства; лучше вернуться позже и в приватном окне.
+    </div>
+
+    <div id="vote-app" data-poll-id="{{ poll.id }}">
+      <form id="ballot-form" class="form" novalidate>
+        {% for contest in config.contests %}
+          <fieldset class="contest">
+            <legend>{{ contest.title }}</legend>
+            {% for option in contest.options %}
+              <label class="option">
+                <input type="radio" name="contest-{{ contest.id }}" value="{{ option.id }}">
+                <span>{{ option.name }}</span>
+              </label>
+            {% endfor %}
+            <label class="option option--abstain">
+              <input type="radio" name="contest-{{ contest.id }}" value="">
+              <span>Не голосовать по этому пункту</span>
+            </label>
+          </fieldset>
+        {% endfor %}
+
+        <label class="option">
+          <input type="checkbox" id="spoil">
+          <span>Испортить бюллетень (голос будет учтён как недействительный)</span>
+        </label>
+
+        <fieldset class="contest">
+          <legend>Секрет для поиска бюллетеня</legend>
+          <label class="option">
+            <input type="checkbox" id="use-passphrase">
+            <span>Вывести секрет из кодового слова (не меньше 20 символов и 4 слов)</span>
+          </label>
+          <div class="field">
+            <label class="label" for="passphrase">Кодовое слово</label>
+            <input class="input" id="passphrase" type="password" autocomplete="off"
+                   spellcheck="false">
+          </div>
+          <p class="hint">
+            По умолчанию секрет генерируется и показывается один раз. Кодовое слово
+            удобнее запомнить, но его стойкость целиком на вашей совести: угадать его
+            можно офлайн по опубликованному ballot_id.
+          </p>
+        </fieldset>
+
+        <button class="button" type="submit" id="submit-ballot">Зашифровать и отправить</button>
+      </form>
+
+      <div id="vote-status" class="notice" hidden></div>
+
+      <div id="receipt" class="notice notice--confirm" hidden>
+        <h2>Сохраните свой секрет</h2>
+        <p>
+          Это единственный способ найти свой бюллетень в опубликованном ящике. Сервер
+          его не знает и восстановить не сможет.
+        </p>
+        <p class="preview"><code id="receipt-secret"></code></p>
+        <p class="muted">Идентификатор бюллетеня:</p>
+        <p><code id="receipt-ballot-id" class="break"></code></p>
+        <p class="muted">
+          Секрет сохранён в этом браузере, но записать его надёжнее: очистка данных
+          браузера удалит копию.
+        </p>
+      </div>
+
+      <noscript>
+        <p class="notice notice--danger">
+          Для шифрования бюллетеня нужен JavaScript: ключ опроса и шифрование работают
+          только в браузере.
+        </p>
+      </noscript>
+    </div>
+
+    <script type="application/json" id="poll-config">{{ config | tojson }}</script>
+    <script src="{{ url_for('static', filename='vendor/libsodium.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/libsodium-wrappers.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/vote.js') }}"></script>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Второй фактор — FairVote{% endblock %}
+{% block content %}
+  <h1>Двухфакторная аутентификация</h1>
+
+  {% if enabled %}
+    <div class="notice">
+      Второй фактор включён. Осталось неиспользованных кодов восстановления:
+      <strong>{{ recovery_left }}</strong>.
+    </div>
+    <p class="muted">
+      Секрет больше не показывается: он хранится только в зашифрованном виде. Если
+      нужен новый набор кодов — сгенерируйте его ниже (старые перестанут работать).
+    </p>
+    <form method="post" action="{{ url_for('auth.regenerate_recovery_codes') }}" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="button button--secondary" type="submit">Новые коды восстановления</button>
+    </form>
+  {% else %}
+    {% if secret %}
+      <p>
+        Добавьте секрет в приложение-аутентификатор (Google Authenticator, Aegis,
+        KeePassXC и т.п.). QR-код мы не рисуем: введите строку вручную или вставьте
+        ссылку <code>otpauth://</code>.
+      </p>
+      <div class="notice">
+        <p class="muted">Секрет (показывается один раз):</p>
+        <p class="preview"><code>{{ secret }}</code></p>
+        <p class="muted">Ссылка для приложения:</p>
+        <p><code class="break">{{ uri }}</code></p>
+      </div>
+      <form method="post" action="{{ url_for('auth.totp_setup_confirm') }}" novalidate class="form">
+        {{ form.hidden_tag() }}
+        {{ ui.field(form.code, "код из приложения, 6 цифр") }}
+        <button class="button" type="submit">Включить второй фактор</button>
+      </form>
+    {% else %}
+      <p class="muted">
+        Секрет не найден. Начните настройку заново:
+        <a href="{{ url_for('auth.totp_setup') }}">получить новый секрет</a>.
+      </p>
+      <form method="post" action="{{ url_for('auth.totp_setup_confirm') }}" novalidate class="form">
+        {{ form.hidden_tag() }}
+        {{ ui.field(form.code) }}
+        <button class="button" type="submit">Подтвердить</button>
+      </form>
+    {% endif %}
+  {% endif %}
+{% endblock %}

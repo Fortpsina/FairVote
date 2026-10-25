@@ -1,0 +1,286 @@
+/* FairVote base stylesheet. No external fonts, no imports: everything is served
+   from this origin (docs/01 N1, docs/02 §2.8). */
+
+:root {
+  --fg: #14161a;
+  --bg: #fbfbf9;
+  --muted: #5c6270;
+  --line: #d9dbe1;
+  --accent: #1e5b46;
+  --danger: #8c1d18;
+  --radius: 10px;
+  --max: 62rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--fg);
+  background: var(--bg);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+a {
+  color: var(--accent);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  background: #eef0f2;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 1.25rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+  color: var(--fg);
+}
+
+.tagline,
+.muted {
+  color: var(--muted);
+}
+
+.tagline {
+  font-size: 0.9rem;
+}
+
+.site-main {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.site-footer {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.notice {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  background: #fff;
+}
+
+.notice--danger {
+  border-left-color: var(--danger);
+}
+
+.button {
+  display: inline-block;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button--secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.demo-banner {
+  background: #fdf3d3;
+  border-bottom: 1px solid #e6cf8b;
+  color: #4a3b09;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.site-nav {
+  margin-left: auto;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.inline-form {
+  display: inline;
+  margin: 0;
+}
+
+.form {
+  max-width: 34rem;
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.input {
+  font: inherit;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--fg);
+}
+
+.input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.field--checkbox {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0.5rem;
+}
+
+.checkbox {
+  margin-top: 0.3rem;
+}
+
+.label-inline {
+  font-size: 0.92rem;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.field-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.notice--confirm {
+  border-left-color: #b58900;
+  margin: 1rem 0;
+}
+
+.preview {
+  font-size: 1.05rem;
+  margin: 0.35rem 0;
+}
+
+h2 {
+  margin-top: 2rem;
+}
+
+.codes {
+  columns: 2;
+  margin: 1rem 0;
+  padding-left: 1.2rem;
+}
+
+.codes li {
+  margin: 0.2rem 0;
+}
+
+.break {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.contest {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.contest legend {
+  font-weight: 600;
+  padding: 0 0.35rem;
+}
+
+.option {
+  display: flex;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.2rem 0;
+}
+
+.option--abstain {
+  color: var(--muted);
+}
+
+.prose {
+  max-width: 46rem;
+}
+
+.prose h2,
+.prose h3 {
+  margin-top: 1.5rem;
+}
+
+
+.button--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.form--inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.code-block {
+  background: #eef0f2;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-size: 0.85rem;
+}

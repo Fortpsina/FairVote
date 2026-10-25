@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ t("terms.title") }} — FairVote{% endblock %}
+{% block content %}
+  <h1>{{ t("terms.title") }}</h1>
+  <p>{{ t("terms.body") }}</p>
+  <p class="muted">
+    Платформа предоставляется «как есть», без гарантий. Оператор платформы указан на
+    странице <a href="{{ url_for('pages.privacy') }}">конфиденциальности</a>.
+  </p>
+{% endblock %}

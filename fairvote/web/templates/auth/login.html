@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Вход — FairVote{% endblock %}
+{% block content %}
+  <h1>Вход</h1>
+
+  {% if error %}
+    <div class="notice notice--danger">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('auth.login') }}" novalidate class="form">
+    {{ form.hidden_tag() }}
+    {{ ui.field(form.login) }}
+    {{ ui.field(form.password) }}
+    <button class="button" type="submit">Войти</button>
+  </form>
+
+  <p class="muted">
+    Забыли пароль? Восстановление по одноразовым кодам появится вместе с двухфакторной
+    аутентификацией; администратор платформы не имеет доступа к реестру и не может
+    сбросить пароль.
+  </p>
+{% endblock %}

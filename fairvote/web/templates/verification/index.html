@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Проверка права голоса — FairVote{% endblock %}
+{% block content %}
+  <h1>Проверка права голоса</h1>
+
+  <div class="notice">
+    <p class="muted">Текущий статус:</p>
+    <p>
+      {% if user.status == "verified" %}
+        <strong>подтверждён</strong>{% if user.verify_method %} ({{ user.verify_method }}){% endif %}
+        {% if user.verify_decided_at %} · {{ user.verify_decided_at }}{% endif %}
+      {% elif user.status == "proof_submitted" %}
+        <strong>ожидает решения провайдера</strong>
+      {% elif user.status == "rejected" %}
+        <strong>отклонён</strong>{% if user.verify_reason_code %} · {{ user.verify_reason_code }}{% endif %}
+      {% else %}
+        <strong>не подтверждён</strong>
+      {% endif %}
+    </p>
+    <p class="muted">Округ: {{ user.district_name }} ({{ user.district_code }})</p>
+  </div>
+
+  {% if code %}
+    <div class="notice notice--confirm">
+      <h2>Код для провайдера</h2>
+      <p class="preview"><code>{{ code }}</code></p>
+      <p class="muted">Действует до {{ expires_at }}. Показывается один раз.</p>
+      <p>
+        Передайте код и документ провайдеру проверки — тем каналом, который он
+        использует. Платформа не принимает файлы и не хранит скан: у неё останутся
+        только метод, дата и решение.
+      </p>
+    </div>
+  {% elif can_request %}
+    <h2>Отправить заявку</h2>
+    <p class="muted">
+      Мы выдадим одноразовый код. Покажите его провайдеру вместе с документом; он
+      внесёт решение, и статус обновится.
+    </p>
+    <form method="post" action="{{ url_for('verification.request_code') }}" class="form">
+      {{ form.hidden_tag() }}
+      <button class="button" type="submit">Отправить заявку</button>
+    </form>
+  {% else %}
+    <p class="muted">
+      Заявка уже отправлена. Когда провайдер внесёт решение, статус изменится —
+      обновите страницу.
+    </p>
+  {% endif %}
+
+  <h2>Почему так</h2>
+  <p class="muted">
+    Автоматическая проверка скана паспорта недостоверна: она подтверждает картинку, а
+    не человека. Поэтому проверку выполняет провайдер, а платформа хранит минимум
+    данных: факт, метод, дату и округ.
+  </p>
+{% endblock %}

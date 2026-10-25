@@ -1,0 +1,47 @@
+{
+  "note": "Public catalogue of electoral districts. Not the voter registry: it contains no personal data and is served to the admin interface so that it never needs to read the registry.",
+  "districts": [
+    {
+      "code": "RU",
+      "level": "country",
+      "name": "Российская Федерация",
+      "parent": null
+    },
+    {
+      "code": "RU-MOW",
+      "level": "region",
+      "name": "Москва",
+      "parent": "RU"
+    },
+    {
+      "code": "RU-MOW-77-012",
+      "level": "district",
+      "name": "Одномандатный округ 012 (Москва)",
+      "parent": "RU-MOW"
+    },
+    {
+      "code": "RU-MOW-77-012-0041",
+      "level": "precinct",
+      "name": "Участок 0041",
+      "parent": "RU-MOW-77-012"
+    },
+    {
+      "code": "RU-SPE",
+      "level": "region",
+      "name": "Санкт-Петербург",
+      "parent": "RU"
+    },
+    {
+      "code": "RU-SPE-78-045",
+      "level": "district",
+      "name": "Одномандатный округ 045 (Санкт-Петербург)",
+      "parent": "RU-SPE"
+    },
+    {
+      "code": "RU-SPE-78-045-0210",
+      "level": "precinct",
+      "name": "Участок 0210",
+      "parent": "RU-SPE-78-045"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Админка — FairVote{% endblock %}
+{% block content %}
+  <h1>Администрирование опросов</h1>
+  <p class="muted">
+    Здесь можно создавать и править опросы до старта. Реестр избирателей и
+    промежуточные результаты администратору недоступны; ключ расшифровки на сервере
+    появляется только после закрытия.
+  </p>
+
+  <p><a class="button" href="{{ url_for('admin.new_poll') }}">Новый опрос</a></p>
+
+  {% if polls %}
+    <table>
+      <thead><tr><th>Опрос</th><th>Статус</th><th>Начало</th><th>Окончание</th><th></th></tr></thead>
+      <tbody>
+        {% for poll in polls %}
+          <tr>
+            <td>{{ poll.title }}</td>
+            <td>{{ poll.status }}</td>
+            <td>{{ poll.starts_at }}</td>
+            <td>{{ poll.ends_at }}</td>
+            <td><a href="{{ url_for('admin.edit_poll', poll_id=poll.id) }}">открыть</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">Опросов пока нет.</p>
+  {% endif %}
+{% endblock %}

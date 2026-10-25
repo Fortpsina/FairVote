@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Журнал — FairVote{% endblock %}
+{% block content %}
+  <h1>Журнал</h1>
+  <p class="muted">
+    Каждая запись содержит <code>seq, ts, kind, poll, payload</code>; хэш покрывает
+    ровно эти поля и предыдущий хэш. Скачать весь журнал:
+    <a href="{{ url_for('transparency.export_audit') }}">audit.jsonl</a>.
+  </p>
+
+  {% if entries %}
+    <table>
+      <thead><tr><th>#</th><th>Время</th><th>Событие</th><th>Хэш</th></tr></thead>
+      <tbody>
+        {% for entry in entries %}
+          <tr>
+            <td><a href="{{ url_for('transparency.entry', seq=entry.seq) }}">{{ entry.seq }}</a></td>
+            <td>{{ entry.ts }}</td>
+            <td>{{ entry.kind }}{% if entry.poll_id %} · {{ entry.poll_id[:8] }}…{% endif %}</td>
+            <td><code>{{ entry.hash.hex()[:16] }}…</code></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if next_after %}
+      <p><a class="button button--secondary"
+            href="{{ url_for('transparency.log', after=next_after) }}">Дальше</a></p>
+    {% endif %}
+  {% else %}
+    <p class="muted">Записей пока нет.</p>
+  {% endif %}
+{% endblock %}

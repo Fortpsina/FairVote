@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ t("privacy.title") }} — FairVote{% endblock %}
+{% block content %}
+  <h1>{{ t("privacy.title") }}</h1>
+  <div class="notice notice--danger">
+    <p>{{ t("privacy.intro") }}</p>
+  </div>
+
+  <h2>{{ t("privacy.what.title") }}</h2>
+  <ul>
+    <li>{{ t("privacy.what.login") }}</li>
+    <li>{{ t("privacy.what.identity") }}</li>
+    <li>{{ t("privacy.what.participation") }}</li>
+    <li>{{ t("privacy.what.ballots") }}</li>
+  </ul>
+
+  <h2>{{ t("privacy.not.title") }}</h2>
+  <ul>
+    <li>{{ t("privacy.not.files") }}</li>
+    <li>{{ t("privacy.not.ip") }}</li>
+    <li>{{ t("privacy.not.email") }}</li>
+    <li>{{ t("privacy.not.history") }}</li>
+  </ul>
+
+  <h2>{{ t("privacy.rights.title") }}</h2>
+  <p>{{ t("privacy.rights.delete") }}</p>
+  <p>{{ t("privacy.rights.retention", days=settings.retention_days) }}</p>
+  <p class="muted">{{ t("privacy.rights.hosting") }}</p>
+
+  <h2>{{ t("privacy.legal.title") }}</h2>
+  <p>
+    {{ t("privacy.legal.placeholder",
+         operator=settings.operator_name,
+         basis=settings.legal_basis,
+         contact=settings.contact) }}
+  </p>
+  <p class="muted">
+    Политические взгляды — особая категория персональных данных; обработка требует
+    явного согласия и законного основания. Шаблон подлежит юридической проверке.
+  </p>
+{% endblock %}

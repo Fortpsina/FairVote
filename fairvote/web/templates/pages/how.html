@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ t("how.title") }} — FairVote{% endblock %}
+{% block content %}
+  <h1>{{ t("how.title") }}</h1>
+  <p class="lead muted">{{ t("how.intro") }}</p>
+
+  <h2>{{ t("how.works.title") }}</h2>
+  <ul>
+    <li>{{ t("how.works.ballot") }}</li>
+    <li>{{ t("how.works.size") }}</li>
+    <li>{{ t("how.works.secret") }}</li>
+    <li>{{ t("how.works.journal") }}</li>
+    <li>{{ t("how.works.eligibility") }}</li>
+  </ul>
+
+  <h2>{{ t("how.notrust.title") }}</h2>
+  <div class="notice notice--danger">
+    <p><strong>Оператор и JavaScript.</strong> {{ t("how.notrust.operator") }}</p>
+  </div>
+  <div class="notice notice--danger">
+    <p><strong>Принуждение.</strong> {{ t("how.notrust.coercion") }}</p>
+  </div>
+  <div class="notice notice--danger">
+    <p><strong>Публикация ключа.</strong> {{ t("how.notrust.key") }}</p>
+  </div>
+  <div class="notice">
+    <p><strong>Хостинг.</strong> {{ t("how.notrust.hosting") }}</p>
+  </div>
+  <div class="notice">
+    <p><strong>Подмена ящика.</strong> {{ t("how.notrust.adding") }}</p>
+  </div>
+  <div class="notice">
+    <p><strong>Право голоса.</strong> {{ t("how.notrust.eligibility") }}</p>
+  </div>
+  <div class="notice">
+    <p><strong>Малые округа.</strong> {{ t("how.notrust.small") }}</p>
+  </div>
+
+  <h2>Что можно проверить самому</h2>
+  <pre class="code-block">python scripts/verify.py \
+  --audit audit.jsonl --audit-sig audit.jsonl.sig \
+  --ballots ballots.jsonl --poll poll.json --poll-key key.json</pre>
+  <p class="muted">
+    Скрипт не импортирует код платформы: он проверяет цепочку, подписи, корни
+    батчей, расшифровывает бюллетени опубликованным ключом и пересчитывает итоги.
+    Если расходится — он говорит, где именно.
+  </p>
+
+  <p><a href="{{ url_for('transparency.index') }}">Страница прозрачности</a></p>
+{% endblock %}

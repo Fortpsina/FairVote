@@ -1,0 +1,26 @@
+# Secrets and local state — never committed (docs/02 §2.4.1, docs/04 §4.4)
+secrets.env
+*.key
+*.pem
+instance/
+var/
+.smoke-instance/
+
+# Local tooling
+.venv/
+.uvcache/
+.tmp/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor / OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# pytest temporary directories (created in the workspace when TMP points here)
+pytest-of-*/

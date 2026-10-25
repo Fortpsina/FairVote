@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — FairVote{% endblock %}
+{% block content %}
+  <h1>{{ code }}. {{ title }}</h1>
+  <p>{{ message }}</p>
+  {% if request_id %}
+    <p class="muted">Код обращения: <code>{{ request_id }}</code></p>
+  {% endif %}
+  <p><a href="/">На главную</a></p>
+{% endblock %}

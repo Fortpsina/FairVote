@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Опросы — FairVote{% endblock %}
+{% block content %}
+  <h1>Опросы</h1>
+  {% if polls %}
+    <table>
+      <thead>
+        <tr><th>Опрос</th><th>Начало</th><th>Окончание</th><th>Статус</th></tr>
+      </thead>
+      <tbody>
+        {% for poll in polls %}
+          <tr>
+            <td><a href="{{ url_for('public.poll_detail', slug=poll.slug) }}">{{ poll.title }}</a></td>
+            <td>{{ poll.starts_at }}</td>
+            <td>{{ poll.ends_at }}</td>
+            <td>
+              {% if poll.status == "open" %}идёт
+              {% elif poll.status == "scheduled" %}запланирован
+              {% elif poll.status in ("closed", "published") %}закрыт
+              {% else %}{{ poll.status }}{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">Пока нет ни одного опроса.</p>
+  {% endif %}
+{% endblock %}

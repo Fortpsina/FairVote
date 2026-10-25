@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}{{ poll.title }} — админка{% endblock %}
+{% block content %}
+  <h1>{{ poll.title }}</h1>
+  <p class="muted">
+    Статус: <strong>{{ poll.status }}</strong> ·
+    {{ poll.starts_at }} — {{ poll.ends_at }} ·
+    ключ: {{ poll.key_fingerprint or "не зафиксирован" }} ·
+    допущено: {{ poll.eligible_total if poll.eligible_total is not none else "—" }}
+  </p>
+  {% if not poll.editable %}
+    <div class="notice notice--danger">
+      Опрос начался: содержание, расписание и ключ заморожены. Правки невозможны — так
+      и задумано.
+    </div>
+  {% endif %}
+
+  <h2>Содержание и расписание</h2>
+  <form method="post" action="{{ url_for('admin.edit_poll', poll_id=poll.id) }}" novalidate class="form">
+    {{ form.hidden_tag() }}
+    {{ ui.field(form.title) }}
+    {{ ui.field(form.summary) }}
+    {{ ui.field(form.description) }}
+    {% if poll.editable %}
+      {{ ui.field(form.starts_at, "UTC") }}
+      {{ ui.field(form.ends_at, "UTC") }}
+      {{ ui.field(form.k_threshold) }}
+      {{ ui.field(form.ballot_plaintext_bytes) }}
+      {{ ui.field(form.key_publish_after, "пусто — сразу после закрытия") }}
+      <button class="button" type="submit">Сохранить</button>
+    {% endif %}
+  </form>
+
+  <h2>Пункты бюллетеня</h2>
+  {% for contest in contests %}
+    <h3>{{ contest.title }} <span class="muted">({{ contest.scope }})</span></h3>
+    <ul>
+      {% for option in contest.options %}
+        <li>{{ option.name }}{% if option.link_url %} — {{ option.link_url }}{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% if poll.editable %}
+      <form method="post" action="{{ url_for('admin.add_option', contest_id=contest.id) }}" novalidate class="form form--inline">
+        {{ option_form.hidden_tag() }}
+        {{ ui.field(option_form.name) }}
+        {{ ui.field(option_form.kind) }}
+        {{ ui.field(option_form.bio) }}
+        {{ ui.field(option_form.link_url) }}
+        {{ ui.field(option_form.display_order) }}
+        <button class="button button--secondary" type="submit">Добавить вариант</button>
+      </form>
+    {% endif %}
+  {% endfor %}
+
+  {% if poll.editable %}
+    <h3>Добавить пункт</h3>
+    <form method="post" action="{{ url_for('admin.add_contest', poll_id=poll.id) }}" novalidate class="form">
+      {{ contest_form.hidden_tag() }}
+      {{ ui.field(contest_form.title) }}
+      {{ ui.field(contest_form.kind) }}
+      {{ ui.field(contest_form.scope) }}
+      {{ ui.field(contest_form.district_code) }}
+      {{ ui.checkbox(contest_form.allow_against_all) }}
+      <button class="button button--secondary" type="submit">Добавить пункт</button>
+    </form>
+  {% endif %}
+
+  <h2>Округа</h2>
+  {% if districts %}
+    <ul>
+      {% for item in districts %}<li>{{ item.code }} — {{ item.name }}</li>{% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">Округа не выбраны: без них опрос не стартует.</p>
+  {% endif %}
+  {% if poll.editable %}
+    <form method="post" action="{{ url_for('admin.add_district', poll_id=poll.id) }}" novalidate class="form">
+      {{ district_form.hidden_tag() }}
+      {{ ui.field(district_form.district_code) }}
+      <button class="button button--secondary" type="submit">Добавить округ</button>
+    </form>
+  {% endif %}
+
+  <h2>Ключ опроса</h2>
+  {% if poll.public_key %}
+    <p class="muted">Ключ зафиксирован, отпечаток <code class="break">{{ poll.key_fingerprint }}</code></p>
+  {% elif poll.editable %}
+    <p class="muted">
+      Сгенерируйте пару офлайн (<code>scripts/poll_keygen.py</code>), вставьте сюда
+      публичный ключ, а приватный держите вне сервера до закрытия.
+    </p>
+    <form method="post" action="{{ url_for('admin.commit_key', poll_id=poll.id) }}" novalidate class="form">
+      {{ key_form.hidden_tag() }}
+      {{ ui.field(key_form.public_key) }}
+      <button class="button button--secondary" type="submit">Зафиксировать ключ</button>
+    </form>
+  {% endif %}
+
+  <h2>Ход опроса</h2>
+  <div class="actions">
+    {% if poll.status in ("closed",) %}
+      <form method="post" action="{{ url_for('admin.publish_key', poll_id=poll.id) }}" novalidate class="form form--inline">
+        {{ private_form.hidden_tag() }}
+        {{ ui.field(private_form.private_key, "вставьте приватный ключ: он попадёт в журнал и станет публичным") }}
+        <button class="button" type="submit">Опубликовать ключ</button>
+      </form>
+    {% endif %}
+    {% if poll.status == "open" %}
+      <form method="post" action="{{ url_for('admin.close_poll', poll_id=poll.id) }}" class="form form--inline">
+        {{ action_form.hidden_tag() }}
+        <button class="button button--secondary" type="submit">Закрыть опрос</button>
+      </form>
+    {% endif %}
+    {% if poll.status == "published" %}
+      <form method="post" action="{{ url_for('admin.tally', poll_id=poll.id) }}" class="form form--inline">
+        {{ action_form.hidden_tag() }}
+        <button class="button button--secondary" type="submit">Пересчитать итоги</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <p class="muted">
+    Все действия записываются в публичный журнал.
+    <a href="{{ url_for('public.poll_detail', slug=poll.slug) }}">Публичная страница</a> ·
+    <a href="{{ url_for('public.poll_results', slug=poll.slug) }}">Итоги</a>
+  </p>
+{% endblock %}

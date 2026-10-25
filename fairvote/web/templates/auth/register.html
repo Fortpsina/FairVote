@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Регистрация — FairVote{% endblock %}
+{% block content %}
+  <h1>Регистрация избирателя</h1>
+
+  {% if done %}
+    <div class="notice">
+      Заявка принята. Если такой человек уже регистрировался, повторная заявка не
+      создаёт второй аккаунт. <a href="{{ url_for('auth.login') }}">Войдите</a>, чтобы
+      проверить статус.
+    </div>
+  {% else %}
+    <p class="muted">
+      ФИО, дата рождения и номер документа используются один раз — чтобы получить
+      неизменяемый идентификатор «один человек — один аккаунт». В базе они не
+      сохраняются: остаётся только необратимый ключ.
+    </p>
+
+    {% if preview %}
+      <div class="notice notice--confirm">
+        <p>Проверьте, как запись будет нормализована:</p>
+        <p class="preview"><strong>{{ preview }}</strong></p>
+        <p class="muted">
+          Регистр, «ё/е», пробелы и дефисы приводятся к единому виду. Если это не ваш
+          документ — вернитесь и исправьте, иначе аккаунт будет считаться другим
+          человеком.
+        </p>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('auth.register') }}" novalidate class="form">
+      {{ form.hidden_tag() }}
+      {{ ui.field(form.login, "латиница, цифры, точка, дефис, подчёркивание") }}
+      {{ ui.field(form.password, "не короче 12 символов; сохраните его в менеджере паролей") }}
+      {{ ui.field(form.fio, "как в документе, полностью") }}
+      {{ ui.field(form.dob, "например 1980-05-17") }}
+      {{ ui.field(form.doc_type) }}
+      {{ ui.field(form.doc_series, "если есть") }}
+      {{ ui.field(form.doc_number) }}
+      {{ ui.field(form.district_code, "округ подтверждается при верификации") }}
+      {{ ui.checkbox(form.consent) }}
+      <button class="button" type="submit">
+        {% if preview %}Создать аккаунт{% else %}Продолжить{% endif %}
+      </button>
+    </form>
+  {% endif %}
+{% endblock %}

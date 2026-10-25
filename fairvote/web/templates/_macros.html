@@ -1,0 +1,16 @@
+{% macro field(f, hint=None) %}
+  <div class="field">
+    {{ f.label(class_="label") }}
+    {{ f(class_="input", autocomplete="off") }}
+    {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+    {% if f.errors %}<p class="field-error">{{ f.errors[0] }}</p>{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro checkbox(f) %}
+  <div class="field field--checkbox">
+    {{ f(class_="checkbox") }}
+    {{ f.label(class_="label-inline") }}
+    {% if f.errors %}<p class="field-error">{{ f.errors[0] }}</p>{% endif %}
+  </div>
+{% endmacro %}

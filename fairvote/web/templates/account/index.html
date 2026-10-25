@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Аккаунт — FairVote{% endblock %}
+{% block content %}
+  <h1>Аккаунт</h1>
+
+  <div class="notice">
+    <p>
+      Логин: <strong>{{ user.login }}</strong> ·
+      статус:
+      {% if user.status == "verified" %}подтверждён{% elif user.status == "proof_submitted" %}ожидает решения{% elif user.status == "rejected" %}отклонён{% else %}не подтверждён{% endif %}
+      · округ: {{ user.district_name }}
+    </p>
+    <p class="muted">
+      Второй фактор:
+      {% if user.totp_enabled %}включён{% else %}не включён — <a href="{{ url_for('auth.totp_setup') }}">включить</a>{% endif %}
+      · <a href="{{ url_for('verification.status_page') }}">проверка права голоса</a>
+    </p>
+  </div>
+
+  <h2>Участие</h2>
+  {% if participation %}
+    <table>
+      <thead><tr><th>Опрос</th><th>Дата</th><th>Статус</th></tr></thead>
+      <tbody>
+        {% for item in participation %}
+          <tr>
+            <td>
+              {% if item.slug %}<a href="{{ url_for('public.poll_detail', slug=item.slug) }}">{{ item.title }}</a>
+              {% else %}{{ item.title }}{% endif %}
+            </td>
+            <td>{{ item.voted_on }}</td>
+            <td>{{ item.status }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted">
+      Даты без времени: точное время голосования не хранится.
+    </p>
+  {% else %}
+    <p class="muted">Вы ещё не участвовали в опросах.</p>
+  {% endif %}
+
+  <h2>Удаление аккаунта</h2>
+  {% if blocker %}
+    <div class="notice">
+      <p>Удаление пока невозможно: {{ blocker }}.</p>
+      <p class="muted">
+        Это ограничение защищает от двойного голоса: запись об участии нельзя удалить,
+        пока опрос не закрыт и не истёк срок хранения ({{ retention_days }} дней).
+      </p>
+    </div>
+  {% else %}
+    <div class="notice notice--danger">
+      <p>Аккаунт удаляется безвозвратно вместе с сессиями и кодами восстановления.</p>
+      <p class="muted">
+        Ваши бюллетени остаются в ящике — они не связаны с аккаунтом и не могут быть
+        извлечены.
+      </p>
+    </div>
+    <form method="post" action="{{ url_for('account.delete_account') }}" novalidate class="form">
+      {{ form.hidden_tag() }}
+      {{ ui.field(form.password, "подтвердите паролем") }}
+      <button class="button button--danger" type="submit">Удалить аккаунт</button>
+    </form>
+  {% endif %}
+{% endblock %}

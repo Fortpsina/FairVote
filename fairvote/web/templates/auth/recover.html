@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Восстановление доступа — FairVote{% endblock %}
+{% block content %}
+  <h1>Восстановление доступа</h1>
+
+  {% if error %}
+    <div class="notice notice--danger">{{ error }}</div>
+  {% endif %}
+
+  <p class="muted">
+    Если вы потеряли пароль, но сохранили коды восстановления, один из них заменит и
+    пароль, и второй фактор. Код одноразовый: после входа сгенерируйте новые коды.
+  </p>
+
+  <form method="post" action="{{ url_for('auth.recover') }}" novalidate class="form">
+    {{ form.hidden_tag() }}
+    {{ ui.field(form.login) }}
+    {{ ui.field(form.code, "например ABCDE-FGHJK") }}
+    {{ ui.field(form.new_password, "не короче 12 символов") }}
+    <button class="button" type="submit">Сменить пароль и войти</button>
+  </form>
+
+  <p class="muted">
+    Если кодов нет — восстановить аккаунт невозможно: администратор платформы не имеет
+    доступа к реестру и не может сбросить пароль. Можно зарегистрироваться заново: тот
+    же человек получит тот же ключ и новый аккаунт.
+  </p>
+{% endblock %}

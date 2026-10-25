@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Второй фактор — FairVote{% endblock %}
+{% block content %}
+  <h1>Подтвердите вход</h1>
+  <p class="muted">
+    Введите 6-значный код из приложения-аутентификатора. Код действует 30 секунд и
+    не может быть использован дважды.
+  </p>
+
+  {% if error %}
+    <div class="notice notice--danger">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('auth.totp_verify') }}" novalidate class="form">
+    {{ form.hidden_tag() }}
+    {{ ui.field(form.code, "например 123456") }}
+    <button class="button" type="submit">Подтвердить</button>
+  </form>
+
+  <h2>Нет доступа к телефону?</h2>
+  <p class="muted">
+    Используйте один из кодов восстановления, которые вы сохранили при настройке.
+    Каждый код одноразовый; после входа настройте второй фактор заново.
+  </p>
+  <form method="post" action="{{ url_for('auth.recovery_login') }}" novalidate class="form">
+    {{ form.hidden_tag() }}
+    <div class="field">
+      <label class="label" for="recovery-code">Код восстановления</label>
+      <input class="input" id="recovery-code" name="code" type="text" autocomplete="off"
+             spellcheck="false" inputmode="text">
+    </div>
+    <button class="button button--secondary" type="submit">Войти по коду</button>
+  </form>
+{% endblock %}

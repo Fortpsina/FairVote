@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}FairVote{% endblock %}
+{% block content %}
+  <h1>Честный голос</h1>
+
+  {% if user %}
+    <div class="notice">
+      Вы вошли как <strong>{{ user.login }}</strong>. Статус:
+      {% if user.status == "verified" %}верифицирован{% elif user.status == "registered" %}ожидает верификации{% else %}{{ user.status }}{% endif %}.
+      Округ: {{ user.district_name }}.
+    </div>
+    <p>
+      {% if user.totp_enabled %}
+        <a class="button button--secondary" href="{{ url_for('auth.totp_setup') }}">Двухфакторная аутентификация</a>
+      {% else %}
+        <a class="button" href="{{ url_for('auth.totp_setup') }}">Включить двухфакторную аутентификацию</a>
+      {% endif %}
+    </p>
+  {% else %}
+    <p>
+      Платформа для голосования с проверяемым подсчётом: бюллетень шифруется в вашем
+      браузере, журнал — публичная цепочка хэшей, а итоги может пересчитать любой
+      желающий.
+    </p>
+    <p>
+      <a class="button" href="{{ url_for('auth.register') }}">Зарегистрироваться</a>
+      <a class="button button--secondary" href="{{ url_for('auth.login') }}">Войти</a>
+    </p>
+  {% endif %}
+
+  <h2>Что уже работает</h2>
+  <ul>
+    <li>аккаунты избирателей и «один человек — один аккаунт» без хранения ФИО и паспорта;</li>
+    <li>публичный журнал действий с цепочкой хэшей и подписанными контрольными точками;</li>
+    <li>независимая проверка журнала скриптом <code>verify.py</code>.</li>
+  </ul>
+  <p class="muted">
+    Опросы, бюллетени и прозрачность появятся в следующих сборках. Ограничения модели
+    честно перечислены на странице «Как это устроено и чему нельзя доверять».
+  </p>
+{% endblock %}

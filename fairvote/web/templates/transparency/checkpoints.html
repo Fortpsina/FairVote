@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Контрольные точки — FairVote{% endblock %}
+{% block content %}
+  <h1>Контрольные точки</h1>
+  <p class="muted">
+    Раз в сутки сервер подписывает голову цепочки ключом Ed25519. Подпись сама по себе
+    ничего не доказывает, пока вы не сравните голову с копией, опубликованной в
+    независимом канале. Публичный ключ:
+  </p>
+  <p><code class="break">{{ public_key }}</code></p>
+
+  {% if checkpoints %}
+    <table>
+      <thead><tr><th>#</th><th>Голова</th><th>Подпись</th><th>Когда</th><th>Где опубликовано</th></tr></thead>
+      <tbody>
+        {% for item in checkpoints %}
+          <tr>
+            <td>{{ item.seq }}</td>
+            <td><code class="break">{{ item.hash.hex() }}</code></td>
+            <td><code class="break">{{ item.signature.hex()[:24] }}…</code></td>
+            <td>{{ item.created_at }}</td>
+            <td>{{ item.anchor_note or "—" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted">
+      Проверить подпись: <code>python scripts/verify.py</code> проверяет экспорт целиком;
+      отдельно — <code>Ed25519_verify(pubkey, canonical_json({hash, seq, v:1}), signature)</code>.
+    </p>
+  {% else %}
+    <p class="muted">Контрольных точек пока нет: они появляются после первого запуска
+      <code>flask daily</code>.</p>
+  {% endif %}
+{% endblock %}
